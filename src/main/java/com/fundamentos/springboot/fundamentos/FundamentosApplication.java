@@ -15,7 +15,6 @@ public class FundamentosApplication implements CommandLineRunner {
 		this.componentDependency = componentDependency;
 	}
 	public static void main(String[] args) {
-
 		SpringApplication.run(FundamentosApplication.class, args);
 	}
 
