@@ -7,6 +7,7 @@ import com.fundamentos.springboot.fundamentos.component.ComponentDependency;
 import com.fundamentos.springboot.fundamentos.entity.User;
 import com.fundamentos.springboot.fundamentos.pojo.UserProperties;
 import com.fundamentos.springboot.fundamentos.repository.UserRepository;
+import com.fundamentos.springboot.fundamentos.service.UserService;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,19 +31,22 @@ public class FundamentosApplication implements CommandLineRunner {
 	private MyBeanWithProperties myBeanWithProperties;
 	private UserProperties userProperties;
     private UserRepository userRepository;
+	private UserService userService;
 	@Autowired
 	public FundamentosApplication(@Qualifier("componentTwoImplement") ComponentDependency componentDependency,
 								  MyBean myBean,
 								  MyBeanWithDependency myBeanWithDependency,
 								  MyBeanWithProperties myBeanWithProperties,
 								  UserProperties userProperties,
-								  UserRepository userRepository) {
+								  UserRepository userRepository,
+								  UserService userService) {
 		this.componentDependency = componentDependency;
 		this.myBean = myBean;
 		this.myBeanWithDependency = myBeanWithDependency;
 		this.myBeanWithProperties = myBeanWithProperties;
 		this.userProperties = userProperties;
 		this.userRepository = userRepository;
+		this.userService = userService;
 	}
 
 	public static void main(String[] args) {
@@ -54,6 +58,7 @@ public class FundamentosApplication implements CommandLineRunner {
 	public void run(String... args) {
 		saveUsersInDataBase();
 		getInformationJpqLFromUser();
+		saveWithErrorTransactional();
 	}
 	/*odos los usuarios que contienen la “U”, no importa si al incio o al final,
 porque se usa los comodines “%%”,
@@ -87,19 +92,45 @@ para los que finalicen es “%letra”.*/
 		userRepository.findByNameOrEmail(null,"user1@domain.com")
 				.stream()
 				.forEach(user -> LOGGER.info("usuario findByNameOrEmail "+ user));
-		 */
+
 		userRepository.findByBirthdateBetween(LocalDate.of(2021, 3, 1), LocalDate.of(2021, 8, 2))
 				.stream()
 				.forEach(user -> LOGGER.info("usuario con intervalo de fechas " + user));
 
 		userRepository.findByNameContainingOrderByIdDesc("user")
 				.stream()
-				.forEach(user -> LOGGER.info("usuarios findByNameContainingOrderByIdDesc " + user));;
+				.forEach(user -> LOGGER.info("usuarios findByNameContainingOrderByIdDesc " + user));
+
+		LOGGER.info("usersdto by getAllByBirthDateAndEmail " + userRepository.getAllByBirthDateAndEmail(LocalDate.of(2021, 9, 6),
+						"marcos@domain.com")
+				.orElseThrow(()->
+						new RuntimeException("NO SE ENCONTRO EL USUARIO APARTIR DEL NAME PARAMETER")));
+				//.stream()
+				//.forEach(userDto -> LOGGER.info("usersdto by getAllByBirthDateAndEmail " + userDto));
+	*/
+
+	}
+
+	private void saveWithErrorTransactional() {
+		User test1 = new User("Test_1_Transactional", "Test_1_Transactional@domain.com", LocalDate.now());
+		User test2 = new User("Test_2_Transactional", "Test_2_Transactional@domain.com", LocalDate.now());
+		User test3 = new User("Test_3_Transactional", "Test_3_Transactional@domain.com", LocalDate.now());
+		User test4 = new User("Test_4_Transactional", "Test_4_Transactional@domain.com", LocalDate.now());
+
+		List<User> users = Arrays.asList(test1, test2, test3, test4);
+		try {
+			userService.saveTransactional(users);
+		} catch (Exception e) {
+			LOGGER.error("This is an exception in transactional method " + e);
+		}
+		userService.getAllUsers().stream()
+				.forEach(user ->
+				LOGGER.info("This is the user in transactional method" + user));
 	}
 	private void saveUsersInDataBase() {
 		User user1 = new User("marcos", "marcos@domain.com", LocalDate.of(2021, 3, 13));
 		User user2 = new User("juan", "juan@domain.com", LocalDate.of(2021, 12, 8));
-		User user3 = new User("user3", "user3@domain.com", LocalDate.of(2021, 9, 6));
+		User user3 = new User("raquel", "raquel@domain.com", LocalDate.of(2021, 9, 6));
 		User user4 = new User("user4", "user4@domain.com", LocalDate.of(2021, 6, 18));
 		User user5 = new User("user5", "user5@domain.com", LocalDate.of(2021, 1, 1));
 		User user6 = new User("user6", "user6@domain.com", LocalDate.of(2021, 7, 7));

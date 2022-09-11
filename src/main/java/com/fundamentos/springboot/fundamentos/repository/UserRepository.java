@@ -5,6 +5,7 @@ import com.fundamentos.springboot.fundamentos.entity.User;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -13,7 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User,Long>{
+public interface UserRepository extends PagingAndSortingRepository<User,Long> {
+    //extends JpaRepository
     @Query("Select u from User u WHERE u.email = ?1")
     Optional<User> findByUserEmail(String email);
 
@@ -29,10 +31,13 @@ public interface UserRepository extends JpaRepository<User,Long>{
    // List<User> findByNameLikeOrderByIdDesc(String name);
     List<User> findByNameContainingOrderByIdDesc(String name);
 
+
     @Query(" SELECT new com.fundamentos.springboot.fundamentos.dto.UserDto(u.id,u.name,u.birthdate) " +
             " FROM User u " +
             " where u.birthdate =:parameterDate " +
             " and u.email=:parameterEmail ")
-    Optional<UserDto> getAllByBirthDateAndEmail(@Param("parameterBirthDate") LocalDate date,
+    Optional<List<UserDto>> getAllByBirthDateAndEmail(@Param("parameterDate") LocalDate date,
                                                 @Param("parameterEmail") String email);
+
+    List<User> findAll();
 }
